@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Forge Viewer</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.css?v=3.1.1" type="text/css">   
+    <link rel="stylesheet" href="mystyle.css" type="text/css"> 
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> 
+    <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/three.min.js"></script>
+    <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.js?v=3.1.1"></script>
+</head>
+
+<body> 
+    <div class="container-fluid">
+            <div class="row"> 
+                <div>
+                 
+                </div>
+                <div>
+                    <div id="myViewerDiv" ></div>
+                </div>
+            </div>
+    </div>             
+</body>
+
+<script>
+    var viewer = null;
+ 
+        var options = {
+            env: 'AutodeskProduction',
+            accessToken: 'eyJhbGciOiJIUzI1NiIsImtpZCI6Imp3dF9zeW1tZXRyaWNfa2V5In0.eyJjbGllbnRfaWQiOiJnVmtvMTJ4NldCYnV6OEVwQ2lmenB2aWh1a1FlWGp1QiIsImV4cCI6MTUwOTg1MjE1MCwic2NvcGUiOlsiZGF0YTpyZWFkIiwiZGF0YTp3cml0ZSIsImJ1Y2tldDpjcmVhdGUiLCJidWNrZXQ6cmVhZCJdLCJhdWQiOiJodHRwczovL2F1dG9kZXNrLmNvbS9hdWQvand0ZXhwNjAiLCJqdGkiOiIwTmowNUd0V2FpQ2lKMnhNdk5aRldySzlTcUEzeWFybkJTQXBtYUJTYXdFYUU1U2hUclFwZHV0cGU0M055YUZWIn0.xwfG8f6grM0q5SB5on45JGR_YpLizKkSKurret-XicA',
+            api:'modelDerivativeV2'
+        };
+        var documentId = 'urn:dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6enpfc2FtcGxlL3RhYmxlLmYzZA==';    
+        Autodesk.Viewing.Initializer(options, function onInitialized(){
+            Autodesk.Viewing.Document.load(documentId, onDocumentLoadSuccess, onDocumentLoadFailure);
+        }); 
+
+        function onDocumentLoadSuccess(doc) {
+
+            // A document contains references to 3D and 2D viewables.
+            var viewables = Autodesk.Viewing.Document.getSubItemsWithProperties(doc.getRootItem(), {'type':'geometry'}, true);
+            if (viewables.length === 0) {
+                console.error('Document contains no viewables.');
+                return;
+            }
+
+            // Choose any of the avialble viewables
+            var initialViewable = viewables[0];
+            var svfUrl = doc.getViewablePath(initialViewable);
+            var modelOptions = {
+                sharedPropertyDbPath: doc.getPropertyDbPath()
+            };
+
+            var viewerDiv = document.getElementById('myViewerDiv');
+            viewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv);
+            viewer.start(svfUrl, modelOptions, onLoadModelSuccess, onLoadModelError);
+        }
+ 
+        function onDocumentLoadFailure(viewerErrorCode) {
+            console.error('onDocumentLoadFailure() - errorCode:' + viewerErrorCode);
+        }
+ 
+        function onLoadModelSuccess(model) {
+            console.log('onLoadModelSuccess()!');
+            console.log('Validate model loaded: ' + (viewer.model === model));
+            console.log(model);
+            
+            //viewer.loadExtension('RoomShaderExtension');
+            
+             viewer.addEventListener(
+              Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
+              onGeometryLoaded);  
+            
+        } 
+        
+        function onLoadModelError(viewerErrorCode) {
+            console.error('onLoadModelError() - errorCode:' + viewerErrorCode);
+        }
+        
+         function onGeometryLoaded(evt){ 
+            //_this.globalGeometryLoaded(modelName,evt.model);
+            viewer.removeEventListener(
+              Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
+              onGeometryLoaded); 
+              
+               //after 2.16
+               var promise = viewer.loadExtension('Autodesk.Viewing.MarkupsCore');  
+                    promise.then(function(extension){ 
+                        console.log('MarkupsCore extension is ready to be used!');
+                            if(_markup == null){
+                                _markup =  extension;
+                            } 
+                }); 
+
+                var promise1 = viewer.loadExtension('Autodesk.Viewing.WebVR');  
+                    promise.then(function(extension){ 
+                        console.log('Autodesk.Viewing.WebVR is ready to be used!');
+                            
+                }); 
+
+          }
+
+          var _markup = null;
+          var storeArrry = new Array();
+          var _viewerStatePersist = null; 
+          $('#btnEnterMarkup').click (function (evt) { 
+            
+            //before 2.16
+            //viewer.loadExtension('Autodesk.Viewing.MarkupsCore') 
+            //var config = {markupsDisableHotkeys:false}; 
+            //_markup = new Autodesk.Viewing.Extensions.Markups.Core.MarkupsCore(viewer,config);
+            //_markup.load();
+
+            
+            _markup.hide(); 
+            _markup.enterEditMode() ;
+         });
+
+         $('#btnLeaveMarkup').click (function (evt) { 
+
+            // finish edit of markup
+            _markup.leaveEditMode();
+            // hide markups (and restore Viewer tools)
+            _markup.hide(); 
+ 
+         });
+
+         $('#btnSaveMarkup').click (function (evt) {
+            // storeArrry = new Array();
+             var id = $('#txtMarkupId').val(); 
+             var storeStr = _markup.generateData();   
+             storeArrry[id] = storeStr;  
+         });
+
+         $('#btnLoadMarkup').click (function (evt) {
+            
+            _markup.leaveEditMode();
+
+            _markup.show();
+
+            // restore the view to the state where the markups were created
+            viewer.restoreState(_viewerStatePersist);
+            // show the markups on a layer
+            //_markup.loadMarkups(markupsPersist, "layerName")
+            var id = $('#txtMarkupId').val();  
+            _markup.loadMarkups(storeArrry[id],id);  
+
+        });
+
+        $('#btnUnLoadMarkup').click (function (evt) {
+            var id = $('#txtMarkupId').val();   
+            _markup.unloadMarkups(id);  
+        });
+
+</script>
+
+</html>
