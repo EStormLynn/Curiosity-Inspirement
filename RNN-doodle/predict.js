@@ -367,7 +367,7 @@ var sketch = function( p ) {
 
     // model selection
     model_sel = p.createSelect();
-    model_sel.position(-150, screen_height-27-27);
+    model_sel.position(195, screen_height-27-27);
     for (var i=0;i<class_list.length;i++) {
       model_sel.option(class_list[i]);
     }
@@ -629,7 +629,7 @@ var sketch = function( p ) {
       encode_strokes(strokes);
       clear_screen();
       draw_example(strokes, start_x, start_y, line_color);
-      set_title_text(/*'This is '+model.info.name+'.'*/"");
+      set_title_text('draw '+model.info.name+'.');
     }
     set_title_text('loading '+c+' model...');
     ModelImporter.change_model(model, c, model_mode, call_back);
